@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>용석, 지안의 300일</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        html, body {
+            margin: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background: #fff5f7;
+            color: #333;
+        }
+
+        /* =========================
+           첫 화면 / 퀴즈
+        ========================= */
+
+        .screen {
+            width: 100%;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 25px;
+        }
+
+        .box {
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 38px;
+            line-height: 1.3;
+            margin-bottom: 15px;
+        }
+
+        h2 {
+            font-size: 26px;
+            margin-bottom: 30px;
+        }
+
+        p {
+            line-height: 1.8;
+        }
+
+        button {
+            width: 100%;
+            max-width: 350px;
+            padding: 16px;
+            margin: 8px 0;
+            border: none;
+            border-radius: 15px;
+            background: white;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #ffe0e7;
+        }
+
+        .start {
+            background: #ff6f91;
+            color: white;
+            margin-top: 30px;
+        }
+
+        input {
+            width: 100%;
+            max-width: 350px;
+            padding: 16px;
+            border: 2px solid #eee;
+            border-radius: 15px;
+            font-size: 16px;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .correct {
+            color: #e75480;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+
+        .wrong {
+            color: #777;
+            margin-top: 20px;
+        }
+
+
+        /* =========================
+           스토리
+        ========================= */
+
+        #story {
+            position: fixed;
+            inset: 0;
+            display: none;
+            overflow: hidden;
+            background: #111;
+        }
+
+
+        /* 블러 배경 */
+
+        .story-background {
+            position: absolute;
+            inset: -30px;
+
+            background-image: var(--background-image);
+            background-size: cover;
+            background-position: center;
+
+            filter: blur(30px);
+            transform: scale(1.1);
+
+            opacity: 0.65;
+        }
+
+
+        /* 어두운 오버레이 */
+
+        .story-overlay {
+            position: absolute;
+            inset: 0;
+
+            background: rgba(0, 0, 0, 0.35);
+
+            z-index: 1;
+        }
+
+
+        /* 진행바 */
+
+        .progress {
+            position: absolute;
+
+            top: 15px;
+            left: 12px;
+            right: 12px;
+
+            display: flex;
+            gap: 4px;
+
+            z-index: 10;
+        }
+
+        .bar {
+            height: 3px;
+
+            background: rgba(255,255,255,0.35);
+
+            flex: 1;
+
+            border-radius: 5px;
+        }
+
+        .bar.active {
+            background: white;
+        }
+
+
+        /* 현재 사진 */
+
+        .photo-container {
+            position: absolute;
+
+            inset: 55px 20px 100px 20px;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+
+            z-index: 2;
+        }
+
+        #storyImage {
+            max-width: 100%;
+            max-height: 100%;
+
+            object-fit: contain;
+
+            border-radius: 4px;
+
+            box-shadow:
+                0 10px 40px rgba(0,0,0,0.5);
+        }
+
+
+        /* 사진 설명 */
+
+        .caption {
+            position: absolute;
+
+            bottom: 35px;
+            left: 25px;
+            right: 25px;
+
+            text-align: center;
+
+            color: white;
+
+            font-size: 18px;
+
+            text-shadow:
+                0 2px 8px rgba(0,0,0,0.8);
+
+            z-index: 8;
+        }
+
+
+        /* 터치 영역 */
+
+        .touch-left,
+        .touch-right {
+            position: absolute;
+
+            top: 0;
+            bottom: 0;
+
+            width: 50%;
+
+            z-index: 5;
+        }
+
+        .touch-left {
+            left: 0;
+        }
+
+        .touch-right {
+            right: 0;
+        }
+
+
+        /* 마지막 화면 */
+
+        .end {
+            position: absolute;
+
+            inset: 0;
+
+            background: rgba(0,0,0,0.85);
+
+            display: none;
+
+            justify-content: center;
+            align-items: center;
+
+            text-align: center;
+
+            padding: 30px;
+
+            color: white;
+
+            z-index: 20;
+        }
+
+        .end h2 {
+            font-size: 28px;
+            line-height: 1.7;
+        }
+
+
+        /* 모바일 화면 */
+
+        @media (max-width: 600px) {
+
+            .photo-container {
+                inset: 55px 10px 110px 10px;
+            }
+
+            #storyImage {
+                max-width: 100%;
+                max-height: 100%;
+            }
+
+            .caption {
+                bottom: 35px;
+                font-size: 17px;
+            }
+
+        }
+
+    </style>
+</head>
+
+
+<body>
+
+
+<!-- =========================
+     첫 화면
+========================= -->
+
+<div id="home" class="screen">
+
+    <div class="box">
+
+        <div style="font-size:60px;">♥</div>
+
+        <h1>
+            용석, 지안의<br>
+            300일
+        </h1>
+
+        <p>
+            우리의 추억을 보기 위해서는<br>
+            먼저 간단한 문제를 풀어주세요.
+        </p>
+
+        <button class="start" onclick="startQuiz()">
+            시작하기
+        </button>
+
+    </div>
+
+</div>
+
+
+<!-- =========================
+     퀴즈
+========================= -->
+
+<div id="quiz" class="screen hidden">
+
+    <div class="box">
+
+        <p id="questionNumber"></p>
+
+        <h2 id="question"></h2>
+
+        <div id="choices"></div>
+
+
+        <div id="answerInput" class="hidden">
+
+            <input
+                type="text"
+                id="textAnswer"
+                placeholder="정답을 입력해주세요"
+            >
+
+            <button onclick="checkTextAnswer()">
+                확인
+            </button>
+
+        </div>
+
+
+        <p id="result"></p>
+
+    </div>
+
+</div>
+
+
+<!-- =========================
+     사진 스토리
+========================= -->
+
+<div id="story">
+
+    <!-- 블러 배경 -->
+    <div
+        class="story-background"
+        id="storyBackground">
+    </div>
+
+
+    <!-- 어두운 오버레이 -->
+    <div class="story-overlay"></div>
+
+
+    <!-- 진행바 -->
+    <div
+        class="progress"
+        id="progress">
+    </div>
+
+
+    <!-- 현재 사진 -->
+    <div class="photo-container">
+
+        <img
+            id="storyImage"
+            alt="우리의 추억">
+
+    </div>
+
+
+    <!-- 설명 -->
+    <div
+        class="caption"
+        id="caption">
+    </div>
+
+
+    <!-- 터치 영역 -->
+    <div
+        class="touch-left"
+        onclick="previousPhoto()">
+    </div>
+
+    <div
+        class="touch-right"
+        onclick="nextPhoto()">
+    </div>
+
+
+    <!-- 마지막 화면 -->
+    <div
+        class="end"
+        id="end">
+
+        <div>
+
+            <h2>
+                우리의 300일
+                <br><br>
+
+                지금까지 함께해줘서 고마워.
+                <br>
+
+                앞으로의 추억도<br>
+                같이 만들어가자.
+                <br><br>
+
+                ♥
+            </h2>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+
+/* =========================
+   퀴즈
+========================= */
+
+const quizzes = [
+
+    {
+        question: "나의 생일은?",
+
+        choices: [
+            "7월 16일",
+            "8월 15일",
+            "8월 16일",
+            "9월 16일"
+        ],
+
+        answer: "8월 16일"
+    },
+
+
+    {
+        question: "매년 12월 30일에 해야 하는 일은?",
+
+        choices: [
+            "한강 가기",
+            "남산타워 가기",
+            "영화관 가기",
+            "놀이공원 가기"
+        ],
+
+        answer: "남산타워 가기"
+    },
+
+
+    {
+        question: "내가 가장 좋아하는 것은?",
+
+        textAnswer: true,
+
+        answer: "유지안"
+    }
+
+];
+
+
+let currentQuiz = 0;
+
+
+function startQuiz() {
+
+    document
+        .getElementById("home")
+        .classList
+        .add("hidden");
+
+    document
+        .getElementById("quiz")
+        .classList
+        .remove("hidden");
+
+    showQuiz();
+
+}
+
+
+function showQuiz() {
+
+    const quiz = quizzes[currentQuiz];
+
+
+    document
+        .getElementById("questionNumber")
+        .innerText =
+        `QUESTION ${currentQuiz + 1} / ${quizzes.length}`;
+
+
+    document
+        .getElementById("question")
+        .innerText =
+        quiz.question;
+
+
+    document
+        .getElementById("result")
+        .innerText = "";
+
+
+    const choices =
+        document.getElementById("choices");
+
+    const answerInput =
+        document.getElementById("answerInput");
+
+
+    choices.innerHTML = "";
+
+    answerInput.classList.add("hidden");
+
+
+    if (quiz.textAnswer) {
+
+        answerInput.classList.remove("hidden");
+
+        document
+            .getElementById("textAnswer")
+            .value = "";
+
+    }
+
+    else {
+
+        quiz.choices.forEach(choice => {
+
+            const button =
+                document.createElement("button");
+
+            button.innerText = choice;
+
+            button.onclick =
+                () => checkAnswer(choice);
+
+            choices.appendChild(button);
+
+        });
+
+    }
+
+}
+
+
+function checkAnswer(choice) {
+
+    const result =
+        document.getElementById("result");
+
+
+    if (choice === quizzes[currentQuiz].answer) {
+
+        result.innerText = "정답!";
+
+        result.className = "correct";
+
+        setTimeout(nextQuiz, 700);
+
+    }
+
+    else {
+
+        result.innerText =
+            "땡! 다시 생각해봐.";
+
+        result.className = "wrong";
+
+    }
+
+}
+
+
+function checkTextAnswer() {
+
+    const input =
+        document
+            .getElementById("textAnswer")
+            .value
+            .trim();
+
+
+    const result =
+        document.getElementById("result");
+
+
+    if (input === quizzes[currentQuiz].answer) {
+
+        result.innerText = "정답!";
+
+        result.className = "correct";
+
+        setTimeout(nextQuiz, 700);
+
+    }
+
+    else {
+
+        result.innerText =
+            "땡! 다시 생각해봐.";
+
+        result.className = "wrong";
+
+    }
+
+}
+
+
+function nextQuiz() {
+
+    currentQuiz++;
+
+
+    if (currentQuiz < quizzes.length) {
+
+        showQuiz();
+
+    }
+
+    else {
+
+        openStory();
+
+    }
+
+}
+
+
+/* =========================
+   사진
+========================= */
+
+const photos = [
+
+    {
+        file: "001.JPEG",
+        caption: ""
+    },
+
+    {
+        file: "002.JPEG",
+        caption: ""
+    },
+
+    {
+        file: "003.JPEG",
+        caption: ""
+    },
+
+    {
+        file: "004.JPEG",
+        caption: ""
+    },
+
+    {
+        file: "005.JPEG",
+        caption: ""
+    },
+
+    {
+        file: "006.JPEG",
+        caption: ""
+    },
+
+    {
+        file: "007.JPEG",
+        caption: ""
+    },
+
+    {
+        file: "008.JPEG",
+        caption: ""
+    },
+
+    {
+        file: "009.JPEG",
+        caption: ""
+    },
+
+    {
+        file: "010.JPEG",
+        caption: ""
+    },
+
+    {
+        file: "011.JPEG",
+        caption: ""
+    },
+
+    {
+        file: "012.JPEG",
+        caption: ""
+    },
+
+    {
+        file: "013.JPEG",
+        caption: ""
+    },
+
+    {
+        file: "014.JPEG",
+        caption: ""
+    },
+
+    {
+        file: "015.JPEG",
+        caption: ""
+    },
+
+    {
+        file: "016.JPEG",
+        caption: ""
+    },
+
+    {
+        file: "017.PNG",
+        caption: ""
+    },
+
+    {
+    file: "018.JPEG",
+    caption: "300일이 3년이 되고 30년, 300년이 지나도 같이있고싶어\n사랑해"}
+
+];
+
+
+let currentPhoto = 0;
+
+
+/* =========================
+   스토리 열기
+========================= */
+
+function openStory() {
+
+    document
+        .getElementById("quiz")
+        .classList
+        .add("hidden");
+
+
+    document
+        .getElementById("story")
+        .style
+        .display = "block";
+
+
+    createProgress();
+
+    showPhoto();
+
+}
+
+
+/* =========================
+   진행바
+========================= */
+
+function createProgress() {
+
+    const progress =
+        document.getElementById("progress");
+
+
+    progress.innerHTML = "";
+
+
+    photos.forEach(() => {
+
+        const bar =
+            document.createElement("div");
+
+        bar.className = "bar";
+
+        progress.appendChild(bar);
+
+    });
+
+}
+
+
+/* =========================
+   사진 표시
+========================= */
+
+function showPhoto() {
+
+    const photo =
+        photos[currentPhoto];
+
+
+    const image =
+        document.getElementById("storyImage");
+
+
+    const background =
+        document.getElementById("storyBackground");
+
+
+    /* 현재 사진 */
+
+    image.src = photo.file;
+
+
+    /* 현재 사진을 배경으로 */
+
+    background.style
+        .setProperty(
+            "--background-image",
+            `url("${photo.file}")`
+        );
+
+
+    /* 설명 */
+
+    document
+        .getElementById("caption")
+        .innerText =
+        photo.caption;
+
+
+    /* 진행바 */
+
+    const bars =
+        document.querySelectorAll(".bar");
+
+
+    bars.forEach((bar, index) => {
+
+        bar.classList.toggle(
+            "active",
+            index === currentPhoto
+        );
+
+    });
+
+}
+
+
+/* =========================
+   다음 사진
+========================= */
+
+function nextPhoto() {
+
+    if (currentPhoto < photos.length - 1) {
+
+        currentPhoto++;
+
+        showPhoto();
+
+    }
+
+    else {
+
+        document
+            .getElementById("end")
+            .style
+            .display = "flex";
+
+    }
+
+}
+
+
+/* =========================
+   이전 사진
+========================= */
+
+function previousPhoto() {
+
+    if (currentPhoto > 0) {
+
+        currentPhoto--;
+
+        showPhoto();
+
+    }
+
+}
+
+</script>
+
+</body>
+</html>
