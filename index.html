@@ -766,7 +766,10 @@ const photos = [
     caption: "300일이 3년이 되고 30년, 300년이 지나도 같이있고싶어\n사랑해"}
 
 ];
-
+photos.forEach(photo => {
+    const img = new Image();
+    img.src = photo.file;
+});
 
 let currentPhoto = 0;
 
